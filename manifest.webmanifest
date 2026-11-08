@@ -1,0 +1,50 @@
+{
+  "name": "QRKing: scan and make QR codes",
+  "short_name": "QRKing",
+  "description": "Scan any QR code, or make one for your Wi-Fi, WhatsApp orders and website. Free.",
+  "start_url": "/?source=homescreen#make",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#2340F5",
+  "theme_color": "#2340F5",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan a code",
+      "url": "/?source=shortcut#scan",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Make a code",
+      "url": "/?source=shortcut#make",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
