@@ -2619,7 +2619,7 @@ const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAl
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const SITE = "https://qrking.vercel.app";
 
-/* Firebase web config: paste the values from Firebase console > Project settings > Your apps */
+/* Optional. Leave empty to save the waitlist on our own server. Or paste the values from Firebase console > Project settings > Your apps */
 const FIREBASE = { apiKey: "", projectId: "" };
 
 /* ---------- router ---------- */
@@ -3064,7 +3064,7 @@ $("#dlSticker").addEventListener("click", () => {
 });
 document.fonts?.ready.then(() => { if(current==="momo") drawSticker(); });
 
-/* ---------- Pro waitlist (Firebase Firestore) ---------- */
+/* ---------- Pro waitlist (our server by default, or Firebase Firestore if keys are set) ---------- */
 const wl = $("#waitlist");
 wl?.addEventListener("submit", async e => {
   e.preventDefault();
@@ -3072,16 +3072,24 @@ wl?.addEventListener("submit", async e => {
   const contact = $("#wlContact").value.trim();
   const isEmail = /^\S+@\S+\.\S+$/.test(contact), digits = contact.replace(/\D/g,"");
   if(!isEmail && !(digits.length>=9 && digits.length<=13)){ toast("Enter a phone number like 024 123 4567, or an email"); $("#wlContact").focus(); return; }
-  if(!FIREBASE.apiKey || !FIREBASE.projectId){ toast("The waitlist isn’t connected yet. It switches on once Firebase is set up."); return; }
   const btn = wl.querySelector("button"); btn.disabled = true; btn.textContent = "Joining…";
   try{
-    const id = crypto.getRandomValues(new Uint32Array(4)).join("").slice(0,24);
-    const name = `projects/${FIREBASE.projectId}/databases/(default)/documents/waitlist/${id}`;
-    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE.projectId}/databases/(default)/documents:commit?key=${FIREBASE.apiKey}`, {
-      method:"POST", headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ writes:[{ update:{ name, fields:{ contact:{stringValue:contact}, kind:{stringValue:isEmail?"email":"phone"}, source:{stringValue:"site"} } },
-        currentDocument:{ exists:false }, updateTransforms:[{ fieldPath:"createdAt", setToServerValue:"REQUEST_TIME" }] }] })
-    });
+    let res;
+    if(FIREBASE.apiKey && FIREBASE.projectId){
+      // Option A: Firebase keys filled in above, save to Firestore.
+      const id = crypto.getRandomValues(new Uint32Array(4)).join("").slice(0,24);
+      const name = `projects/${FIREBASE.projectId}/databases/(default)/documents/waitlist/${id}`;
+      res = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE.projectId}/databases/(default)/documents:commit?key=${FIREBASE.apiKey}`, {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ writes:[{ update:{ name, fields:{ contact:{stringValue:contact}, kind:{stringValue:isEmail?"email":"phone"}, source:{stringValue:"site"} } },
+          currentDocument:{ exists:false }, updateTransforms:[{ fieldPath:"createdAt", setToServerValue:"REQUEST_TIME" }] }] })
+      });
+    }else{
+      // Option B (default): the save script on our own server (waitlist_server.py, set up by setup.sh).
+      res = await fetch("/api/waitlist", {
+        method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ contact })
+      });
+    }
     if(!res.ok) throw new Error(res.status);
     wl.hidden = true; $("#wlDone").hidden = false;
   }catch(err){
